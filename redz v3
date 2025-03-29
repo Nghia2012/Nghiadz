@@ -1,1 +1,0 @@
-game.Players.LocalPlayer:Kick("You have been detected using scripts by the system and your account has been banned for 10 seconds.")
