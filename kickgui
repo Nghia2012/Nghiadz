@@ -1,0 +1,24 @@
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KickGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = lp:WaitForChild("PlayerGui")
+
+local button = Instance.new("TextButton")
+button.Parent = screenGui
+button.Size = UDim2.new(0, 70, 0, 24)
+button.Position = UDim2.new(1, -80, 0, 10)
+button.Text = "Kick"
+button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+button.TextColor3 = Color3.fromRGB(200, 200, 200)
+button.BorderSizePixel = 0
+button.Font = Enum.Font.Gotham
+button.TextSize = 14
+button.AutoButtonColor = true
+button.AnchorPoint = Vector2.new(0, 0)
+
+button.MouseButton1Click:Connect(function()
+    lp:Kick("GG🤫")
+end)
