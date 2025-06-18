@@ -20,5 +20,7 @@ button.AutoButtonColor = true
 button.AnchorPoint = Vector2.new(0, 0)
 
 button.MouseButton1Click:Connect(function()
-    lp:Kick("GG🤫")
+	local jobId = game.JobId or "Unknown"
+	local reason = "GG🤫\nServer JobId:\n" .. jobId
+	lp:Kick(reason)
 end)
