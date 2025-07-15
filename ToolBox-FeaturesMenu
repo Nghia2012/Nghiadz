@@ -1,0 +1,261 @@
+-- Lấy các dịch vụ cần thiết
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local lp = Players.LocalPlayer -- Người chơi hiện tại
+local guiParent = lp:WaitForChild("PlayerGui") -- GUI gốc để chứa ScreenGui
+
+-- Xoá GUI cũ nếu tồn tại
+if guiParent:FindFirstChild("CustomToolboxUI") then
+	guiParent.CustomToolboxUI:Destroy()
+end
+
+-- Tạo một ScreenGui mới
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CustomToolboxUI"
+screenGui.ResetOnSpawn = false -- Không reset GUI khi respawn
+screenGui.Parent = guiParent
+
+-- Danh sách các tính năng và trạng thái ban đầu (tắt)
+local features = {
+	["Ragdoll"] = false,
+	["Fling"] = false,
+	["Speed x1.5"] = false,
+}
+
+local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
+local currentTab = "Player" -- Tab hiện tại được hiển thị
+
+-- Tạo nút toggle menu (nút mở/đóng menu)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "MenuToggle"
+toggleBtn.Text = "🛠️" -- Biểu tượng nút
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 18
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 10, 0, 10)
+toggleBtn.Active = true
+toggleBtn.Draggable = true -- Có thể kéo nút này
+toggleBtn.ZIndex = 5
+toggleBtn.Parent = screenGui
+toggleBtn.AutoButtonColor = false
+toggleBtn.ClipsDescendants = true
+
+local uic = Instance.new("UICorner", toggleBtn) -- Bo góc nút
+uic.CornerRadius = UDim.new(1, 0)
+
+-- Tạo frame chứa toàn bộ menu
+local menu = Instance.new("Frame")
+menu.Name = "MenuContainer"
+menu.Size = UDim2.new(1, 0, 1, 0)
+menu.Position = UDim2.new(0, 0, 0, 0)
+menu.BackgroundTransparency = 1
+menu.Visible = false -- Ẩn khi mới khởi tạo
+menu.ZIndex = 4
+menu.Parent = screenGui
+
+-- Tạo danh sách tab (Player/World)
+local tabList = Instance.new("Frame")
+tabList.Size = UDim2.new(0, 100, 1, 0)
+tabList.Position = UDim2.new(0, 0, 0, 0)
+tabList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+tabList.BackgroundTransparency = 0.6
+tabList.BorderSizePixel = 0
+tabList.Parent = menu
+
+local tabLayout = Instance.new("UIListLayout") -- Tự động sắp xếp nút trong tab
+tabLayout.Parent = tabList
+tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabLayout.Padding = UDim.new(0, 8)
+
+-- Tab: Player
+local playerTab = Instance.new("TextButton")
+playerTab.Size = UDim2.new(1, 0, 0, 40)
+playerTab.Text = "Player"
+playerTab.Font = Enum.Font.GothamBold
+playerTab.TextSize = 18
+playerTab.TextColor3 = Color3.new(1, 1, 1)
+playerTab.BackgroundTransparency = 1
+playerTab.BorderSizePixel = 0
+playerTab.Name = "PlayerTab"
+playerTab.Parent = tabList
+
+-- Đường kẻ dưới tab Player
+local playerDivider = Instance.new("Frame")
+playerDivider.Size = UDim2.new(1, 0, 0, 1)
+playerDivider.BackgroundColor3 = Color3.new(1, 1, 1)
+playerDivider.BackgroundTransparency = 0.6
+playerDivider.BorderSizePixel = 0
+playerDivider.Parent = tabList
+
+-- Tab: World
+local worldTab = Instance.new("TextButton")
+worldTab.Size = UDim2.new(1, 0, 0, 40)
+worldTab.Text = "World"
+worldTab.Font = Enum.Font.GothamBold
+worldTab.TextSize = 18
+worldTab.TextColor3 = Color3.new(1, 1, 1)
+worldTab.BackgroundTransparency = 1
+worldTab.BorderSizePixel = 0
+worldTab.Name = "WorldTab"
+worldTab.Parent = tabList
+
+-- Đường kẻ dưới tab World
+local worldDivider = Instance.new("Frame")
+worldDivider.Size = UDim2.new(1, 0, 0, 1)
+worldDivider.BackgroundColor3 = Color3.new(1, 1, 1)
+worldDivider.BackgroundTransparency = 0.6
+worldDivider.BorderSizePixel = 0
+worldDivider.Parent = tabList
+
+-- Khung chứa các nút tính năng
+local featureList = Instance.new("Frame")
+featureList.Size = UDim2.new(0, 160, 1, 0)
+featureList.Position = UDim2.new(1, -160, 0, 0)
+featureList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+featureList.BackgroundTransparency = 0.6
+featureList.BorderSizePixel = 0
+featureList.Name = "FeatureList"
+featureList.Parent = menu
+
+-- Tạo khoảng cách bên trái và trên cho các nút
+local featurePadding = Instance.new("UIPadding")
+featurePadding.PaddingLeft = UDim.new(0, 35) -- Đẩy sang phải
+featurePadding.PaddingTop = UDim.new(0, 15)  -- Hạ thấp xuống
+featurePadding.Parent = featureList
+
+-- Tự động sắp xếp các nút tính năng theo thứ tự
+local featureLayout = Instance.new("UIListLayout")
+featureLayout.Parent = featureList
+featureLayout.SortOrder = Enum.SortOrder.LayoutOrder
+featureLayout.Padding = UDim.new(0, 10) -- Khoảng cách giữa các nút
+featureLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+featureLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+-- Hàm lấy nhân vật người chơi
+local function getChar()
+	return lp.Character or lp.CharacterAdded:Wait()
+end
+
+-- Hàm tạo 1 nút tính năng
+local function makeBtn(name, order, callback)
+	local btn = Instance.new("TextButton")
+	btn.Name = name
+	btn.Size = UDim2.new(1, -20, 0, 35) -- Nút rộng, cách mép phải 20px
+	btn.LayoutOrder = order
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 14
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.BackgroundTransparency = 1
+	btn.BorderSizePixel = 0
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.Text = "   " .. name .. ": ❌" -- Có khoảng trắng đầu
+	btn.Parent = featureList
+
+	btn.MouseButton1Click:Connect(function()
+		features[name] = not features[name] -- Toggle trạng thái
+		btn.Text = "   " .. name .. ": " .. (features[name] and "✅" or "❌") -- Đổi text
+		callback(features[name]) -- Gọi logic xử lý
+	end)
+end
+
+-- Logic: Ragdoll
+makeBtn("Ragdoll", 1, function(on)
+	local c = getChar()
+	local hum = c:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+	if on then
+		hum:ChangeState(Enum.HumanoidStateType.Physics)
+		hum.PlatformStand = true
+		for _, part in ipairs(c:GetChildren()) do
+			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+				part.Anchored = false
+				part.CanCollide = true
+			end
+		end
+	else
+		hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+		hum.PlatformStand = false
+		hum:Move(Vector3.zero, false)
+	end
+end)
+
+-- Logic: Fling
+local flingActive = false
+makeBtn("Fling", 2, function(on)
+	flingActive = on
+	if flingActive then
+		coroutine.wrap(function()
+			local movel = 0.1
+			while flingActive do
+				RunService.Heartbeat:Wait()
+				local hrp = getChar():FindFirstChild("HumanoidRootPart")
+				if hrp then
+					local vel = hrp.Velocity
+					hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+					RunService.RenderStepped:Wait()
+					hrp.Velocity = vel
+					RunService.Stepped:Wait()
+					hrp.Velocity = vel + Vector3.new(0, movel, 0)
+					movel = -movel -- Đảo chiều liên tục để rung lắc
+				end
+			end
+		end)()
+	end
+end)
+
+-- Logic: Tăng tốc độ đi
+makeBtn("Speed x1.5", 3, function(on)
+	local hum = getChar():FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = on and defaultSpeed * 1.5 or defaultSpeed
+	end
+end)
+
+-- Cập nhật các nút hiển thị theo tab hiện tại
+local function updateTab()
+	for _, btn in ipairs(featureList:GetChildren()) do
+		if btn:IsA("TextButton") then
+			btn.Visible = currentTab == "Player" -- Hiện nếu đúng tab
+		end
+	end
+end
+
+-- Khi bấm vào tab Player
+playerTab.MouseButton1Click:Connect(function()
+	currentTab = "Player"
+	updateTab()
+end)
+
+-- Khi bấm vào tab World
+worldTab.MouseButton1Click:Connect(function()
+	currentTab = "World"
+	updateTab()
+end)
+
+-- Bật/tắt menu khi nhấn nút toggle
+local menuOpen = false
+toggleBtn.MouseButton1Click:Connect(function()
+	menuOpen = not menuOpen
+	menu.Visible = menuOpen
+end)
+
+-- Reset lại trạng thái khi người chơi chết
+lp.CharacterAdded:Connect(function(char)
+	char:WaitForChild("Humanoid").Died:Connect(function()
+		for k, _ in pairs(features) do
+			features[k] = false
+		end
+		for _, btn in ipairs(featureList:GetChildren()) do
+			if btn:IsA("TextButton") then
+				btn.Text = "   " .. btn.Name .. ": ❌"
+			end
+		end
+	end)
+end)
+
+-- Khởi tạo lần đầu tab Player
+updateTab()
