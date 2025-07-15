@@ -21,7 +21,6 @@ local features = {
 	["Ragdoll"] = false,
 	["Fling"] = false,
 	["Speed x1.5"] = false,
-	["Fly (WASD)"] = false,
 }
 
 local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
@@ -213,46 +212,6 @@ makeBtn("Speed x1.5", 3, function(on)
 	local hum = getChar():FindFirstChildOfClass("Humanoid")
 	if hum then
 		hum.WalkSpeed = on and defaultSpeed * 1.5 or defaultSpeed
-	end
-end)
--- Logic: Fly (WASD điều khiển bay)
-local flyConnection = nil
-makeBtn("Fly (WASD)", 4, function(on)
-	local char = getChar()
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not hrp or not hum then return end
-
-	if on then
-		hum.PlatformStand = true
-		local speed = 60
-
-		local direction = Vector3.zero
-		local uis = game:GetService("UserInputService")
-
-		local function updateDir()
-			direction = Vector3.zero
-			if uis:IsKeyDown(Enum.KeyCode.W) then direction += Vector3.new(0, 0, -1) end
-			if uis:IsKeyDown(Enum.KeyCode.S) then direction += Vector3.new(0, 0, 1) end
-			if uis:IsKeyDown(Enum.KeyCode.A) then direction += Vector3.new(-1, 0, 0) end
-			if uis:IsKeyDown(Enum.KeyCode.D) then direction += Vector3.new(1, 0, 0) end
-			direction = direction.Unit == direction.Unit and direction.Unit or Vector3.zero
-		end
-
-		flyConnection = RunService.RenderStepped:Connect(function()
-			updateDir()
-			if direction.Magnitude > 0 then
-				local camCF = workspace.CurrentCamera.CFrame
-				local moveDir = (camCF.RightVector * direction.X + camCF.LookVector * direction.Z)
-				hrp.Velocity = moveDir.Unit * speed
-			else
-				hrp.Velocity = Vector3.zero
-			end
-		end)
-	else
-		if flyConnection then flyConnection:Disconnect() end
-		hrp.Velocity = Vector3.zero
-		hum.PlatformStand = false
 	end
 end)
 
