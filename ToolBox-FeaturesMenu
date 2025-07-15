@@ -21,7 +21,7 @@ local features = {
 	["Ragdoll"] = false,
 	["Fling"] = false,
 	["Speed x1.5"] = false,
-	["Underground Stealth"] = false,
+	["Safe Mode"] = false,
 }
 
 local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
@@ -220,7 +220,7 @@ local TweenService = game:GetService("TweenService")
 local oldPos_Underground
 local tween_Underground
 
-makeBtn("Underground Stealth", 4, function(on)
+makeBtn("Safe Mode", 4, function(on)
 	local char = getChar()
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
