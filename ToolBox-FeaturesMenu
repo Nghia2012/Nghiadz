@@ -59,7 +59,7 @@ menu.Parent = screenGui
 
 -- Tạo danh sách tab (Player/World)
 local tabList = Instance.new("Frame")
-tabList.Size = UDim2.new(0, 100, 1, 0)
+tabList.Size = UDim2.new(0, 160, 1, 0)
 tabList.Position = UDim2.new(0, 0, 0, 0)
 tabList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 tabList.BackgroundTransparency = 0.6
