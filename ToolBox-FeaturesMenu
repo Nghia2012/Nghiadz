@@ -21,6 +21,7 @@ local features = {
 	["Ragdoll"] = false,
 	["Fling"] = false,
 	["Speed x1.5"] = false,
+	["Underground Stealth"] = false,
 }
 
 local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
@@ -212,6 +213,56 @@ makeBtn("Speed x1.5", 3, function(on)
 	local hum = getChar():FindFirstChildOfClass("Humanoid")
 	if hum then
 		hum.WalkSpeed = on and defaultSpeed * 1.5 or defaultSpeed
+	end
+end)
+
+local TweenService = game:GetService("TweenService")
+local oldPos_Underground
+local tween_Underground
+
+makeBtn("Underground Stealth", 4, function(on)
+	local char = getChar()
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	if on then
+		oldPos_Underground = hrp.Position -- Lưu lại vị trí gốc
+
+		-- Tạo tween xuống dưới
+		local targetCFrame = hrp.CFrame * CFrame.new(0, -10, 0)
+		tween_Underground = TweenService:Create(hrp, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+			CFrame = targetCFrame
+		})
+		tween_Underground:Play()
+
+		-- Sau tween 0.5s, anchor lại toàn thân
+		task.delay(0.5, function()
+			for _, part in pairs(char:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.Anchored = true
+				end
+			end
+		end)
+	else
+		-- Hủy tween nếu đang chạy
+		if tween_Underground then
+			tween_Underground:Cancel()
+		end
+
+		-- Mở khóa toàn thân
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.Anchored = false
+			end
+		end
+
+		-- Tween trở lại vị trí ban đầu
+		if oldPos_Underground then
+			local backTween = TweenService:Create(hrp, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+				CFrame = CFrame.new(oldPos_Underground)
+			})
+			backTween:Play()
+		end
 	end
 end)
 
