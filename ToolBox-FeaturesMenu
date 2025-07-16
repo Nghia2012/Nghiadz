@@ -13,24 +13,24 @@ end
 -- Tạo một ScreenGui mới
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CustomToolboxUI"
-screenGui.ResetOnSpawn = false -- Không reset GUI khi respawn
+screenGui.ResetOnSpawn = false
 screenGui.Parent = guiParent
 
--- Danh sách các tính năng và trạng thái ban đầu (tắt)
+-- Danh sách các tính năng
 local features = {
 	["Ragdoll"] = false,
 	["Fling"] = false,
 	["Speed x1.5"] = false,
-	["NoClip"] = false,
+	["Noclip"] = false,
 }
 
-local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
-local currentTab = "Player" -- Tab hiện tại được hiển thị
+local defaultSpeed = 16
+local currentTab = "Player"
 
--- Tạo nút toggle menu (nút mở/đóng menu)
+-- Nút toggle menu
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "MenuToggle"
-toggleBtn.Text = "🛠️" -- Biểu tượng nút
+toggleBtn.Text = "🛠️"
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 18
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -39,26 +39,25 @@ toggleBtn.BorderSizePixel = 0
 toggleBtn.Size = UDim2.new(0, 50, 0, 50)
 toggleBtn.Position = UDim2.new(0, 10, 0, 10)
 toggleBtn.Active = true
-toggleBtn.Draggable = true -- Có thể kéo nút này
+toggleBtn.Draggable = true
 toggleBtn.ZIndex = 5
-toggleBtn.Parent = screenGui
 toggleBtn.AutoButtonColor = false
 toggleBtn.ClipsDescendants = true
+toggleBtn.Parent = screenGui
 
-local uic = Instance.new("UICorner", toggleBtn) -- Bo góc nút
-uic.CornerRadius = UDim.new(1, 0)
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
 
--- Tạo frame chứa toàn bộ menu
+-- Frame menu chính
 local menu = Instance.new("Frame")
 menu.Name = "MenuContainer"
 menu.Size = UDim2.new(1, 0, 1, 0)
 menu.Position = UDim2.new(0, 0, 0, 0)
 menu.BackgroundTransparency = 1
-menu.Visible = false -- Ẩn khi mới khởi tạo
+menu.Visible = false
 menu.ZIndex = 4
 menu.Parent = screenGui
 
--- Tạo danh sách tab (Player/World)
+-- Tab List
 local tabList = Instance.new("Frame")
 tabList.Size = UDim2.new(0, 160, 1, 0)
 tabList.Position = UDim2.new(0, 0, 0, 0)
@@ -67,12 +66,12 @@ tabList.BackgroundTransparency = 0.6
 tabList.BorderSizePixel = 0
 tabList.Parent = menu
 
-local tabLayout = Instance.new("UIListLayout") -- Tự động sắp xếp nút trong tab
-tabLayout.Parent = tabList
+local tabLayout = Instance.new("UIListLayout")
 tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 tabLayout.Padding = UDim.new(0, 8)
+tabLayout.Parent = tabList
 
--- Tab: Player
+-- Tab Player
 local playerTab = Instance.new("TextButton")
 playerTab.Size = UDim2.new(1, 0, 0, 40)
 playerTab.Text = "Player"
@@ -84,7 +83,6 @@ playerTab.BorderSizePixel = 0
 playerTab.Name = "PlayerTab"
 playerTab.Parent = tabList
 
--- Đường kẻ dưới tab Player
 local playerDivider = Instance.new("Frame")
 playerDivider.Size = UDim2.new(1, 0, 0, 1)
 playerDivider.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -92,7 +90,7 @@ playerDivider.BackgroundTransparency = 0.6
 playerDivider.BorderSizePixel = 0
 playerDivider.Parent = tabList
 
--- Tab: World
+-- Tab World
 local worldTab = Instance.new("TextButton")
 worldTab.Size = UDim2.new(1, 0, 0, 40)
 worldTab.Text = "World"
@@ -104,7 +102,6 @@ worldTab.BorderSizePixel = 0
 worldTab.Name = "WorldTab"
 worldTab.Parent = tabList
 
--- Đường kẻ dưới tab World
 local worldDivider = Instance.new("Frame")
 worldDivider.Size = UDim2.new(1, 0, 0, 1)
 worldDivider.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -112,7 +109,7 @@ worldDivider.BackgroundTransparency = 0.6
 worldDivider.BorderSizePixel = 0
 worldDivider.Parent = tabList
 
--- Khung chứa các nút tính năng
+-- Danh sách tính năng
 local featureList = Instance.new("Frame")
 featureList.Size = UDim2.new(0, 160, 1, 0)
 featureList.Position = UDim2.new(1, -160, 0, 0)
@@ -122,30 +119,28 @@ featureList.BorderSizePixel = 0
 featureList.Name = "FeatureList"
 featureList.Parent = menu
 
--- Tạo khoảng cách bên trái và trên cho các nút
 local featurePadding = Instance.new("UIPadding")
-featurePadding.PaddingLeft = UDim.new(0, 35) -- Đẩy sang phải
-featurePadding.PaddingTop = UDim.new(0, 15)  -- Hạ thấp xuống
+featurePadding.PaddingLeft = UDim.new(0, 35)
+featurePadding.PaddingTop = UDim.new(0, 15)
 featurePadding.Parent = featureList
 
--- Tự động sắp xếp các nút tính năng theo thứ tự
 local featureLayout = Instance.new("UIListLayout")
-featureLayout.Parent = featureList
 featureLayout.SortOrder = Enum.SortOrder.LayoutOrder
-featureLayout.Padding = UDim.new(0, 10) -- Khoảng cách giữa các nút
+featureLayout.Padding = UDim.new(0, 10)
 featureLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
 featureLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+featureLayout.Parent = featureList
 
--- Hàm lấy nhân vật người chơi
+-- Hàm lấy nhân vật
 local function getChar()
 	return lp.Character or lp.CharacterAdded:Wait()
 end
 
--- Hàm tạo 1 nút tính năng
+-- Tạo nút tính năng
 local function makeBtn(name, order, callback)
 	local btn = Instance.new("TextButton")
 	btn.Name = name
-	btn.Size = UDim2.new(1, -20, 0, 35) -- Nút rộng, cách mép phải 20px
+	btn.Size = UDim2.new(1, -20, 0, 35)
 	btn.LayoutOrder = order
 	btn.Font = Enum.Font.Gotham
 	btn.TextSize = 14
@@ -153,17 +148,17 @@ local function makeBtn(name, order, callback)
 	btn.BackgroundTransparency = 1
 	btn.BorderSizePixel = 0
 	btn.TextXAlignment = Enum.TextXAlignment.Left
-	btn.Text = "   " .. name .. ": ❌" -- Có khoảng trắng đầu
+	btn.Text = "   " .. name .. ": ❌"
 	btn.Parent = featureList
 
 	btn.MouseButton1Click:Connect(function()
-		features[name] = not features[name] -- Toggle trạng thái
-		btn.Text = "   " .. name .. ": " .. (features[name] and "✅" or "❌") -- Đổi text
-		callback(features[name]) -- Gọi logic xử lý
+		features[name] = not features[name]
+		btn.Text = "   " .. name .. ": " .. (features[name] and "✅" or "❌")
+		callback(features[name])
 	end)
 end
 
--- Logic: Ragdoll
+-- Ragdoll
 makeBtn("Ragdoll", 1, function(on)
 	local c = getChar()
 	local hum = c:FindFirstChildOfClass("Humanoid")
@@ -184,7 +179,7 @@ makeBtn("Ragdoll", 1, function(on)
 	end
 end)
 
--- Logic: Fling
+-- Fling
 local flingActive = false
 makeBtn("Fling", 2, function(on)
 	flingActive = on
@@ -198,14 +193,30 @@ makeBtn("Fling", 2, function(on)
 					local vel = hrp.Velocity
 					hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
 					RunService.RenderStepped:Wait()
--- Logic: Noclip
-local noclipConn
+					hrp.Velocity = vel
+					RunService.Stepped:Wait()
+					hrp.Velocity = vel + Vector3.new(0, movel, 0)
+					movel = -movel
+				end
+			end
+		end)()
+	end
+end)
 
+-- Speed x1.5
+makeBtn("Speed x1.5", 3, function(on)
+	local hum = getChar():FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.WalkSpeed = on and defaultSpeed * 1.5 or defaultSpeed
+	end
+end)
+
+-- Noclip
+local noclipConn
 makeBtn("Noclip", 4, function(on)
 	local char = getChar()
 
 	if on then
-		-- Bắt đầu Noclip
 		noclipConn = RunService.Stepped:Connect(function()
 			for _, v in pairs(char:GetDescendants()) do
 				if v:IsA("BasePart") then
@@ -214,13 +225,10 @@ makeBtn("Noclip", 4, function(on)
 			end
 		end)
 	else
-		-- Tắt Noclip
 		if noclipConn then
 			noclipConn:Disconnect()
 			noclipConn = nil
 		end
-
-		-- Khôi phục CanCollide
 		for _, v in pairs(char:GetDescendants()) do
 			if v:IsA("BasePart") then
 				v.CanCollide = true
@@ -229,38 +237,36 @@ makeBtn("Noclip", 4, function(on)
 	end
 end)
 
--- Cập nhật các nút hiển thị theo tab hiện tại
+-- Cập nhật tab hiển thị
 local function updateTab()
 	for _, btn in ipairs(featureList:GetChildren()) do
 		if btn:IsA("TextButton") then
-			btn.Visible = currentTab == "Player" -- Hiện nếu đúng tab
+			btn.Visible = currentTab == "Player"
 		end
 	end
 end
 
--- Khi bấm vào tab Player
 playerTab.MouseButton1Click:Connect(function()
 	currentTab = "Player"
 	updateTab()
 end)
 
--- Khi bấm vào tab World
 worldTab.MouseButton1Click:Connect(function()
 	currentTab = "World"
 	updateTab()
 end)
 
--- Bật/tắt menu khi nhấn nút toggle
+-- Toggle hiển thị menu
 local menuOpen = false
 toggleBtn.MouseButton1Click:Connect(function()
 	menuOpen = not menuOpen
 	menu.Visible = menuOpen
 end)
 
--- Reset lại trạng thái khi người chơi chết
+-- Reset tính năng khi chết
 lp.CharacterAdded:Connect(function(char)
 	char:WaitForChild("Humanoid").Died:Connect(function()
-		for k, _ in pairs(features) do
+		for k in pairs(features) do
 			features[k] = false
 		end
 		for _, btn in ipairs(featureList:GetChildren()) do
@@ -271,5 +277,5 @@ lp.CharacterAdded:Connect(function(char)
 	end)
 end)
 
--- Khởi tạo lần đầu tab Player
+-- Khởi tạo
 updateTab()
