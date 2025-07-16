@@ -21,7 +21,7 @@ local features = {
 	["Ragdoll"] = false,
 	["Fling"] = false,
 	["Speed x1.5"] = false,
-	["No Clip"] = false,
+	["NoClip"] = false,
 }
 
 local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
