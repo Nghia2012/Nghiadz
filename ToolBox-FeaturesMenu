@@ -22,6 +22,7 @@ local features = {
 	["Fling"] = false,
 	["Speed x1.5"] = false,
 	["Noclip"] = false,
+	["Push"] = false,
 }
 
 local defaultSpeed = 16
@@ -236,6 +237,45 @@ makeBtn("Noclip", 4, function(on)
 		end
 	end
 end)
+
+-- Push
+makeBtn("Push", 5, function(on)
+	local char = getChar()
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hum or not hrp then return end
+
+	if on then
+		-- Kích hoạt Ragdoll
+		hum:ChangeState(Enum.HumanoidStateType.Physics)
+		hum.PlatformStand = true
+		for _, part in ipairs(char:GetChildren()) do
+			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+				part.Anchored = false
+				part.CanCollide = true
+			end
+		end
+
+		-- Đẩy từ phía trước (tức là hướng ngược lại với hướng nhìn)
+		local dir = -hrp.CFrame.LookVector
+		local force = Instance.new("BodyVelocity")
+		force.Name = "RagdollPushForce"
+		force.Velocity = dir * 10 + Vector3.new(0, -10, 0)
+		force.MaxForce = Vector3.new(1, 1, 1) * 30000
+		force.P = 1000
+		force.Parent = hrp
+
+		task.delay(0.4, function()
+			if force then force:Destroy() end
+		end)
+	else
+		-- Tắt Ragdoll
+		hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+		hum.PlatformStand = false
+		hum:Move(Vector3.zero, false)
+	end
+end)
+
 
 -- Cập nhật tab hiển thị
 local function updateTab()
