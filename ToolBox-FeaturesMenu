@@ -21,7 +21,7 @@ local features = {
 	["Ragdoll"] = false,
 	["Fling"] = false,
 	["Speed x1.5"] = false,
-	["Safe Mode"] = false,
+	["No Clip"] = false,
 }
 
 local defaultSpeed = 16 -- Tốc độ mặc định của người chơi
@@ -198,71 +198,33 @@ makeBtn("Fling", 2, function(on)
 					local vel = hrp.Velocity
 					hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
 					RunService.RenderStepped:Wait()
-					hrp.Velocity = vel
-					RunService.Stepped:Wait()
-					hrp.Velocity = vel + Vector3.new(0, movel, 0)
-					movel = -movel -- Đảo chiều liên tục để rung lắc
-				end
-			end
-		end)()
-	end
-end)
+-- Logic: Noclip
+local noclipConn
 
--- Logic: Tăng tốc độ đi
-makeBtn("Speed x1.5", 3, function(on)
-	local hum = getChar():FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.WalkSpeed = on and defaultSpeed * 1.5 or defaultSpeed
-	end
-end)
-
--- Logic: Safe Mode (ẩn mình dưới map)
-makeBtn("Safe Mode", 4, function(on)
+makeBtn("Noclip", 4, function(on)
 	local char = getChar()
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not (char and hrp and hum) then return end
-
-	local originalPos = hrp.Position
-	local TweenService = game:GetService("TweenService")
-
-	local noclipConn -- dùng để lưu kết nối Noclip
 
 	if on then
-		-- Bật Noclip
+		-- Bắt đầu Noclip
 		noclipConn = RunService.Stepped:Connect(function()
 			for _, v in pairs(char:GetDescendants()) do
-				if v:IsA("BasePart") and v.CanCollide then
+				if v:IsA("BasePart") then
 					v.CanCollide = false
 				end
 			end
 		end)
-
-		-- Tween xuống dưới 60 đơn vị (ẩn dưới sàn)
-		local goal = {Position = originalPos - Vector3.new(0, 60, 0)}
-		local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-		local tween = TweenService:Create(hrp, tweenInfo, goal)
-		tween:Play()
-
-		-- Lưu vào character để dùng lại khi tắt
-		char:SetAttribute("OriginalPos", originalPos)
-		char:SetAttribute("NoclipConn", noclipConn)
 	else
 		-- Tắt Noclip
-		if char:GetAttribute("NoclipConn") then
-			local conn = char:GetAttribute("NoclipConn")
-			if typeof(conn) == "RBXScriptConnection" then
-				conn:Disconnect()
-			end
+		if noclipConn then
+			noclipConn:Disconnect()
+			noclipConn = nil
 		end
 
-		-- Tween trở lại vị trí ban đầu
-		local original = char:GetAttribute("OriginalPos")
-		if typeof(original) == "Vector3" then
-			local goal = {Position = original}
-			local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-			local tween = TweenService:Create(hrp, tweenInfo, goal)
-			tween:Play()
+		-- Khôi phục CanCollide
+		for _, v in pairs(char:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = true
+			end
 		end
 	end
 end)
