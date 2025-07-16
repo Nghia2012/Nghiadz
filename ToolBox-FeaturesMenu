@@ -22,7 +22,6 @@ local features = {
 	["Fling"] = false,
 	["Speed x1.5"] = false,
 	["Noclip"] = false,
-	["Fly"] = false,
 }
 
 local defaultSpeed = 16
@@ -237,80 +236,6 @@ makeBtn("Noclip", 4, function(on)
 		end
 	end
 end)
-
--- Logic: Fly
-local uis = game:GetService("UserInputService")
-local flying = false
-local flyConn = nil
-local controls = {
-	Forward = false,
-	Backward = false,
-	Left = false,
-	Right = false
-}
-local flySpeed = 2
-
-makeBtn("Fly", 4, function(on)
-	local chr = getChar()
-	local hrp = chr:WaitForChild("HumanoidRootPart")
-	local hum = chr:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-
-	flying = on
-	hum.PlatformStand = flying
-
-	-- Tắt hoạt ảnh nếu có
-	local animate = chr:FindFirstChild("Animate")
-	if animate then
-		animate.Disabled = flying
-	end
-	for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
-		track:Stop()
-	end
-
-	if flying then
-		flyConn = RunService.RenderStepped:Connect(function()
-			local cam = workspace.CurrentCamera
-			local lv = cam.CFrame.LookVector
-			local rv = cam.CFrame.RightVector
-			local moveDir = Vector3.zero
-
-			if controls.Forward then moveDir += lv end
-			if controls.Backward then moveDir -= lv end
-			if controls.Left then moveDir -= rv end
-			if controls.Right then moveDir += rv end
-
-			moveDir = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * flySpeed
-			if moveDir.Magnitude == moveDir.Magnitude then
-				hrp.Velocity = moveDir
-			end
-		end)
-	else
-		if flyConn then flyConn:Disconnect() end
-		hum.PlatformStand = false
-		hrp.Velocity = Vector3.zero
-	end
-end)
-
--- Điều khiển phím bay
-uis.InputBegan:Connect(function(input, gpe)
-	if gpe then return end
-	local key = input.KeyCode
-	if key == Enum.KeyCode.W then controls.Forward = true end
-	if key == Enum.KeyCode.S then controls.Backward = true end
-	if key == Enum.KeyCode.A then controls.Left = true end
-	if key == Enum.KeyCode.D then controls.Right = true end
-end)
-
-uis.InputEnded:Connect(function(input, gpe)
-	if gpe then return end
-	local key = input.KeyCode
-	if key == Enum.KeyCode.W then controls.Forward = false end
-	if key == Enum.KeyCode.S then controls.Backward = false end
-	if key == Enum.KeyCode.A then controls.Left = false end
-	if key == Enum.KeyCode.D then controls.Right = false end
-end)
-
 
 -- Cập nhật tab hiển thị
 local function updateTab()
