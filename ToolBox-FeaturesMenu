@@ -317,5 +317,33 @@ lp.CharacterAdded:Connect(function(char)
 	end)
 end)
 
+-- Free Camera (chỉ hiện trong World tab)
+makeBtn("Free Camera", 100, function(on)
+	local p = Players.LocalPlayer
+	if on then
+		p.CameraMode = Enum.CameraMode.Classic
+		p.CameraMaxZoomDistance = 50
+		p.CameraMinZoomDistance = 2
+		p.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
+	else
+		p.CameraMode = Enum.CameraMode.LockFirstPerson
+		p.CameraMaxZoomDistance = 0.5
+		p.CameraMinZoomDistance = 0.5
+		p.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+	end
+end)
+
 -- Khởi tạo
-updateTab()
+local function updateTab()
+	for _, btn in ipairs(featureList:GetChildren()) do
+		if btn:IsA("TextButton") then
+			if currentTab == "Player" and features[btn.Name] ~= nil then
+				btn.Visible = true
+			elseif currentTab == "World" and btn.Name == "Free Camera" then
+				btn.Visible = true
+			else
+				btn.Visible = false
+			end
+		end
+	end
+end
