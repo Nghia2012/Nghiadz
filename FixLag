@@ -1,0 +1,105 @@
+-- LocalScript: Siêu Tối Ưu FPS + GUI FPS/Ping
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+
+-- 📌 Siêu tối ưu đồ họa
+pcall(function()
+    -- Lighting cơ bản
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 2
+    Lighting.EnvironmentSpecularScale = 0
+    Lighting.EnvironmentDiffuseScale = 0
+    Lighting.FogEnd = 1e6 -- bỏ sương mù
+
+    -- Nước
+    Workspace.WaterWaveSize = 0
+    Workspace.WaterWaveSpeed = 0
+    Workspace.WaterReflectance = 0
+    Workspace.WaterTransparency = 1
+
+    -- Terrain
+    Workspace.Terrain.WaterWaveSize = 0
+    Workspace.Terrain.WaterWaveSpeed = 0
+    Workspace.Terrain.WaterReflectance = 0
+    Workspace.Terrain.WaterTransparency = 1
+
+    -- Giảm tải toàn map
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+            obj.Enabled = false
+        elseif obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Explosion") then
+            obj.Enabled = false
+        elseif obj:IsA("Decal") or obj:IsA("Texture") then
+            obj.Transparency = 0.8 -- làm nhẹ texture
+        elseif obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+            obj.Enabled = false
+        elseif obj:IsA("MeshPart") and obj.RenderFidelity ~= Enum.RenderFidelity.Automatic then
+            obj.RenderFidelity = Enum.RenderFidelity.Performance
+        end
+    end
+end)
+
+-- 📌 Giảm tải mạng
+settings().Network.IncomingReplicationLag = 0.05
+
+-- 📌 GUI tạo FPS + Ping
+local function createStatsGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "StatsGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local statsLabel = Instance.new("TextLabel")
+    statsLabel.Size = UDim2.new(0, 180, 0, 60)
+    statsLabel.Position = UDim2.new(0, 10, 0, 10)
+    statsLabel.BackgroundTransparency = 1
+    statsLabel.TextColor3 = Color3.new(1, 1, 1)
+    statsLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+    statsLabel.TextStrokeTransparency = 0
+    statsLabel.TextSize = 22
+    statsLabel.Font = Enum.Font.SourceSansBold
+    statsLabel.TextXAlignment = Enum.TextXAlignment.Left
+    statsLabel.TextYAlignment = Enum.TextYAlignment.Top
+    statsLabel.TextWrapped = true
+    statsLabel.Text = "Loading..."
+    statsLabel.Parent = screenGui
+    return statsLabel
+end
+
+local statsLabel = createStatsGui()
+
+-- 📌 FPS & Ping logic
+local lastTime = tick()
+local frameCount = 0
+local fps = 0
+local ping = 0
+
+RunService.RenderStepped:Connect(function()
+    -- FPS
+    frameCount += 1
+    if tick() - lastTime >= 1 then
+        fps = frameCount
+        frameCount = 0
+        lastTime = tick()
+    end
+
+    -- Ping
+    local rawPing = player:GetNetworkPing() * 1000
+    if rawPing > 0 then
+        ping = math.floor(rawPing)
+    end
+
+    -- Update GUI
+    statsLabel.Text = "FPS: "..fps.."\nPing: "..(ping > 0 and (ping.." ms") or "---")
+end)
+
+-- 📌 Giữ GUI khi chết
+player.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    if not player.PlayerGui:FindFirstChild("StatsGUI") then
+        statsLabel = createStatsGui()
+    end
+end)
