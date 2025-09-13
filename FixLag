@@ -1,105 +1,211 @@
--- LocalScript: Siêu Tối Ưu FPS + GUI FPS/Ping
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
-local player = Players.LocalPlayer
+-- LocalScript trong StarterPlayerScripts hoặc StarterGui
+-- Normal FPS Optimizer (Fixed) 😈
 
--- 📌 Siêu tối ưu đồ họa
-pcall(function()
-    -- Lighting cơ bản
-    Lighting.GlobalShadows = false
-    Lighting.Brightness = 2
-    Lighting.EnvironmentSpecularScale = 0
-    Lighting.EnvironmentDiffuseScale = 0
-    Lighting.FogEnd = 1e6 -- bỏ sương mù
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "NormalFPSGui"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
-    -- Nước
-    Workspace.WaterWaveSize = 0
-    Workspace.WaterWaveSpeed = 0
-    Workspace.WaterReflectance = 0
-    Workspace.WaterTransparency = 1
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 60)
+frame.Position = UDim2.new(0.05, 0, 0.05, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Active = true
+frame.Parent = gui
 
-    -- Terrain
-    Workspace.Terrain.WaterWaveSize = 0
-    Workspace.Terrain.WaterWaveSpeed = 0
-    Workspace.Terrain.WaterReflectance = 0
-    Workspace.Terrain.WaterTransparency = 1
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -30, 0.5, 0)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Normal FPS [OFF]"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextScaled = true
+title.Parent = frame
 
-    -- Giảm tải toàn map
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
-            obj.Enabled = false
-        elseif obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Explosion") then
-            obj.Enabled = false
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            obj.Transparency = 0.8 -- làm nhẹ texture
-        elseif obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
-            obj.Enabled = false
-        elseif obj:IsA("MeshPart") and obj.RenderFidelity ~= Enum.RenderFidelity.Automatic then
-            obj.RenderFidelity = Enum.RenderFidelity.Performance
-        end
-    end
-end)
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(0.6, -5, 0.5, -5)
+toggle.Position = UDim2.new(0, 5, 0.5, 0)
+toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+toggle.Text = "Toggle"
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.Font = Enum.Font.SourceSansBold
+toggle.TextScaled = true
+toggle.Parent = frame
 
--- 📌 Giảm tải mạng
-settings().Network.IncomingReplicationLag = 0.05
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0.3, -5, 0.5, -5)
+close.Position = UDim2.new(0.7, 0, 0.5, 0)
+close.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+close.Text = "X"
+close.TextColor3 = Color3.new(1, 1, 1)
+close.Font = Enum.Font.SourceSansBold
+close.TextScaled = true
+close.Parent = frame
 
--- 📌 GUI tạo FPS + Ping
-local function createStatsGui()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "StatsGUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+--// FPS Optimize
+local fpsEnabled = false
+local optimized = {} -- cache để không optimize lặp lại
 
-    local statsLabel = Instance.new("TextLabel")
-    statsLabel.Size = UDim2.new(0, 180, 0, 60)
-    statsLabel.Position = UDim2.new(0, 10, 0, 10)
-    statsLabel.BackgroundTransparency = 1
-    statsLabel.TextColor3 = Color3.new(1, 1, 1)
-    statsLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
-    statsLabel.TextStrokeTransparency = 0
-    statsLabel.TextSize = 22
-    statsLabel.Font = Enum.Font.SourceSansBold
-    statsLabel.TextXAlignment = Enum.TextXAlignment.Left
-    statsLabel.TextYAlignment = Enum.TextYAlignment.Top
-    statsLabel.TextWrapped = true
-    statsLabel.Text = "Loading..."
-    statsLabel.Parent = screenGui
-    return statsLabel
+local function isFlameParticle(v)
+	if not v or not v.Name then return false end
+	local n = v.Name:lower()
+	return n:find("flame") or n:find("fire") or n:find("ember")
 end
 
-local statsLabel = createStatsGui()
+local function OptimizeObject(v)
+	if optimized[v] then return end
+	optimized[v] = true
 
--- 📌 FPS & Ping logic
-local lastTime = tick()
-local frameCount = 0
-local fps = 0
-local ping = 0
+	if v:IsA("BasePart") then
+		v.Material = Enum.Material.Plastic
+		v.Reflectance = 0
+		pcall(function() v.CastShadow = false end)
+	end
 
-RunService.RenderStepped:Connect(function()
-    -- FPS
-    frameCount += 1
-    if tick() - lastTime >= 1 then
-        fps = frameCount
-        frameCount = 0
-        lastTime = tick()
-    end
+	-- Accessory giữ texture
+	if v:IsA("MeshPart") and v.Parent and v.Parent:IsA("Accessory") then
+		v.Material = Enum.Material.Plastic
+		v.Reflectance = 0
+		return
+	end
 
-    -- Ping
-    local rawPing = player:GetNetworkPing() * 1000
-    if rawPing > 0 then
-        ping = math.floor(rawPing)
-    end
+	-- Tool giữ texture
+	if v:IsA("MeshPart") and v.Parent and v.Parent:IsA("Tool") then
+		v.Material = Enum.Material.Plastic
+		v.Reflectance = 0
+		return
+	end
 
-    -- Update GUI
-    statsLabel.Text = "FPS: "..fps.."\nPing: "..(ping > 0 and (ping.." ms") or "---")
+	-- MeshPart trong map: bỏ texture, giữ màu
+	if v:IsA("MeshPart") and not (v.Parent and (v.Parent:IsA("Accessory") or v.Parent:IsA("Tool"))) then
+		if v.TextureID ~= "" then v.TextureID = "" end
+		v.Material = Enum.Material.Plastic
+		v.Reflectance = 0
+		v.CastShadow = false
+	end
+
+	-- Decal/Texture: giữ mặt face
+	if v:IsA("Decal") and v.Name ~= "face" then v.Transparency = 1 end
+	if v:IsA("Texture") then v.Transparency = 1 end
+
+	-- SurfaceAppearance kill
+	for _, c in pairs(v:GetChildren()) do
+		if c:IsA("SurfaceAppearance") then c:Destroy() end
+	end
+
+	-- SpecialMesh: giữ texture nếu trong Accessory/Tool
+	if v:IsA("SpecialMesh") or v:IsA("FileMesh") then
+		if not (v.Parent and (v.Parent:IsA("Accessory") or v.Parent:IsA("Tool"))) then
+			v.TextureId = ""
+		end
+	end
+
+	-- Particles
+	if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") or v:IsA("Smoke") or v:IsA("Sparkles") then
+		if not isFlameParticle(v) then
+			v.Enabled = false
+			if v:IsA("ParticleEmitter") then
+				v.Rate = 0
+				v.Lifetime = NumberRange.new(0)
+			end
+		end
+	end
+
+	-- Explosion
+	if v:IsA("Explosion") then
+		v.BlastPressure = 1
+		v.BlastRadius = 1
+	end
+end
+
+local function OptimizeGame()
+	local g = game
+	local w = g.Workspace
+	local l = g.Lighting
+	local t = w.Terrain
+
+	-- Terrain nhẹ nhưng vẫn giữ trong suốt
+	t.WaterWaveSize = 0
+	t.WaterWaveSpeed = 0
+	t.WaterReflectance = 0
+	t.WaterTransparency = 0.2
+
+	l.GlobalShadows = false
+	l.FogEnd = 9e9
+	l.Brightness = 1
+	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+	for _, v in pairs(g:GetDescendants()) do
+		OptimizeObject(v)
+	end
+	for _, e in pairs(l:GetChildren()) do
+		if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+			e.Enabled = false
+		end
+	end
+end
+
+-- Auto fix spawn mới
+game.DescendantAdded:Connect(function(v)
+	if fpsEnabled then OptimizeObject(v) end
 end)
 
--- 📌 Giữ GUI khi chết
-player.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    if not player.PlayerGui:FindFirstChild("StatsGUI") then
-        statsLabel = createStatsGui()
-    end
+-- Respawn fix (chỉ quét nhân vật mới)
+player.CharacterAdded:Connect(function(char)
+	if fpsEnabled then
+		for _, v in pairs(char:GetDescendants()) do
+			OptimizeObject(v)
+		end
+	end
+end)
+
+-- Toggle
+local function ToggleFPS()
+	fpsEnabled = not fpsEnabled
+	if fpsEnabled then
+		title.Text = "Normal FPS [ON]"
+		OptimizeGame()
+	else
+		title.Text = "Normal FPS [OFF]"
+	end
+end
+
+toggle.MouseButton1Click:Connect(ToggleFPS)
+close.MouseButton1Click:Connect(function() frame.Visible = false end)
+
+-- Drag system
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+		startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+frame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
 end)
