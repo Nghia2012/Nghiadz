@@ -1,5 +1,4 @@
 local player = game.Players.LocalPlayer
-
 local gui = Instance.new("ScreenGui")
 gui.Name = "UltraFPSGui"
 gui.ResetOnSpawn = false
@@ -137,7 +136,7 @@ end
 
 local function OptimizeUI()
 	for _, ui in pairs(game:GetDescendants()) do
-		if ui:IsA("UIStroke") or ui:IsA("UIGradient") or ui:IsA("UIShadow") then
+		if (ui:IsA("UIGradient") or ui:IsA("UIShadow")) and not ui:IsDescendantOf(player.PlayerGui) then
 			pcall(function() ui:Destroy() end)
 		end
 	end
@@ -430,10 +429,11 @@ task.spawn(function()
 				if p:FindFirstChild("PlayerGui") then
 					for _, g in pairs(p.PlayerGui:GetDescendants()) do
 						if g:IsA("ImageLabel") or g:IsA("ImageButton") then
-							if g.Image ~= "" then
-								g.Image = "" 
-							end
-						end
+	-- chỉ xoá ảnh GUI lớn (background, overlay, banner)
+	if g.AbsoluteSize.X > 300 or g.AbsoluteSize.Y > 300 then
+		g.Image = ""
+	end
+end
 					end
 				end
 			end
