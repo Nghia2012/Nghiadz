@@ -1,5 +1,5 @@
 local Notification = require(game:GetService("ReplicatedStorage").Notification)
 
-Notification.new("<Color=Yellow>Chó cốm mất dạy chết mẹ 😂<Color=/>"):Display()
+Notification.new("<Color=Yellow>Ai đọc làm chó 😂<Color=/>"):Display()
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Nghia2012/Nghiadz/refs/heads/main/BlueXHub"))()
