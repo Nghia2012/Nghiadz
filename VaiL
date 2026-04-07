@@ -1,3 +1,4 @@
+window.MY_DICT = `
 100 triệu
 15 phút
 2 chân
@@ -90837,3 +90838,4 @@ zích zắc
 ỷ quyền
 ỷ thế
 ỷ trọng
+`.trim();
