@@ -1,349 +1,203 @@
--- Lấy các dịch vụ cần thiết
+-- SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local lp = Players.LocalPlayer -- Người chơi hiện tại
-local guiParent = lp:WaitForChild("PlayerGui") -- GUI gốc để chứa ScreenGui
-
--- Xoá GUI cũ nếu tồn tại
-if guiParent:FindFirstChild("CustomToolboxUI") then
-	guiParent.CustomToolboxUI:Destroy()
-end
-
--- Tạo một ScreenGui mới
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CustomToolboxUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = guiParent
-
--- Danh sách các tính năng
-local features = {
-	["Ragdoll"] = false,
-	["Fling"] = false,
-	["Speed x1.5"] = false,
-	["Noclip"] = false,
-	["Push"] = false,
-}
-
-local defaultSpeed = 16
+-- VARIABLES
+local lp = Players.LocalPlayer
+local guiParent = lp:WaitForChild("PlayerGui")
 local currentTab = "Player"
 
--- Nút toggle menu
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Name = "MenuToggle"
-toggleBtn.Text = "🛠️"
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 18
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-toggleBtn.BorderSizePixel = 0
-toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-toggleBtn.Position = UDim2.new(0, 10, 0, 10)
-toggleBtn.Active = true
-toggleBtn.Draggable = true
-toggleBtn.ZIndex = 5
-toggleBtn.AutoButtonColor = false
-toggleBtn.ClipsDescendants = true
-toggleBtn.Parent = screenGui
+-- QUẢN LÝ LOGIC & TABS
+local FeatureLogic = {
+	["Fling"] = {
+	tab = "Player",
+	logic = function(on)
+		-- cleanup connection cũ nếu có
+		if _G.FlingConnection then
+			_G.FlingConnection:Disconnect()
+			_G.FlingConnection = nil
+		end
 
-Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+		if on then
+			_G.FlingConnection = RunService.Heartbeat:Connect(function()
+				local char = lp.Character
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				if not hrp then return end
 
--- Frame menu chính
-local menu = Instance.new("Frame")
+				local vel = hrp.Velocity
+				hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+				RunService.RenderStepped:Wait()
+				hrp.Velocity = vel
+			end)
+		end
+	end
+},
+["Anti-Collision"] = {
+		tab = "Player",
+		logic = function(on)
+			_G.AntiCollide = on
+			if on then
+				task.spawn(function()
+					while _G.AntiCollide do
+						for _, otherPlayer in ipairs(Players:GetPlayers()) do
+							if otherPlayer ~= lp and otherPlayer.Character then
+								for _, part in ipairs(otherPlayer.Character:GetDescendants()) do
+									if part:IsA("BasePart") then
+										part.CanCollide = false
+									end
+								end
+							end
+						end
+						task.wait(0.1) -- Đợi một chút để tránh giật lag
+					end
+				end)
+			end
+		end
+	},
+
+	["Print Hello"] = {
+		tab = "World",
+		logic = function(on)
+			if on then print("Hello World! 🌎") end
+		end
+	}
+}
+
+-- TRẠNG THÁI HỆ THỐNG
+_G.Features = {}
+for name, _ in pairs(FeatureLogic) do _G.Features[name] = false end
+
+-- CLEANUP OLD UI
+if guiParent:FindFirstChild("CustomToolboxUI") then guiParent.CustomToolboxUI:Destroy() end
+
+-- UI INITIALIZATION
+local screenGui = Instance.new("ScreenGui", guiParent)
+screenGui.Name = "CustomToolboxUI"
+screenGui.ResetOnSpawn = false
+
+local menu = Instance.new("Frame", screenGui)
 menu.Name = "MenuContainer"
 menu.Size = UDim2.new(1, 0, 1, 0)
-menu.Position = UDim2.new(0, 0, 0, 0)
 menu.BackgroundTransparency = 1
 menu.Visible = false
-menu.ZIndex = 4
-menu.Parent = screenGui
 
--- Tab List
-local tabList = Instance.new("Frame")
+-- TOGGLE BUTTON
+local toggleBtn = Instance.new("TextButton", screenGui)
+toggleBtn.Name = "MenuToggle"
+toggleBtn.Text = "🛠️"
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 10, 0, 10)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 18
+toggleBtn.Draggable = true 
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+
+-- TAB LIST (Bên trái)
+local tabList = Instance.new("Frame", menu)
 tabList.Size = UDim2.new(0, 160, 1, 0)
-tabList.Position = UDim2.new(0, 0, 0, 0)
 tabList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 tabList.BackgroundTransparency = 0.6
-tabList.BorderSizePixel = 0
-tabList.Parent = menu
+local tabLayout = Instance.new("UIListLayout", tabList)
+tabLayout.Padding = UDim.new(0, 0)
 
-local tabLayout = Instance.new("UIListLayout")
-tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabLayout.Padding = UDim.new(0, 8)
-tabLayout.Parent = tabList
-
--- Tab Player
-local playerTab = Instance.new("TextButton")
-playerTab.Size = UDim2.new(1, 0, 0, 40)
-playerTab.Text = "Player"
-playerTab.Font = Enum.Font.SourceSans
-playerTab.TextSize = 18
-playerTab.TextColor3 = Color3.new(1, 1, 1)
-playerTab.BackgroundTransparency = 1
-playerTab.BorderSizePixel = 0
-playerTab.Name = "PlayerTab"
-playerTab.Parent = tabList
-
-local playerDivider = Instance.new("Frame")
-playerDivider.Size = UDim2.new(1, 0, 0, 1)
-playerDivider.BackgroundColor3 = Color3.new(1, 1, 1)
-playerDivider.BackgroundTransparency = 0.6
-playerDivider.BorderSizePixel = 0
-playerDivider.Parent = tabList
-
--- Tab World
-local worldTab = Instance.new("TextButton")
-worldTab.Size = UDim2.new(1, 0, 0, 40)
-worldTab.Text = "World"
-worldTab.Font = Enum.Font.SourceSans
-worldTab.TextSize = 18
-worldTab.TextColor3 = Color3.new(1, 1, 1)
-worldTab.BackgroundTransparency = 1
-worldTab.BorderSizePixel = 0
-worldTab.Name = "WorldTab"
-worldTab.Parent = tabList
-
-local worldDivider = Instance.new("Frame")
-worldDivider.Size = UDim2.new(1, 0, 0, 1)
-worldDivider.BackgroundColor3 = Color3.new(1, 1, 1)
-worldDivider.BackgroundTransparency = 0.6
-worldDivider.BorderSizePixel = 0
-worldDivider.Parent = tabList
-
--- Danh sách tính năng
-local featureList = Instance.new("Frame")
+-- FEATURE LIST (Bên phải)
+local featureList = Instance.new("Frame", menu)
 featureList.Size = UDim2.new(0, 160, 1, 0)
 featureList.Position = UDim2.new(1, -160, 0, 0)
 featureList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 featureList.BackgroundTransparency = 0.6
-featureList.BorderSizePixel = 0
-featureList.Name = "FeatureList"
-featureList.Parent = menu
 
-local featurePadding = Instance.new("UIPadding")
-featurePadding.PaddingLeft = UDim.new(0, 35)
-featurePadding.PaddingTop = UDim.new(0, 15)
-featurePadding.Parent = featureList
+local featurePadding = Instance.new("UIPadding", featureList)
+featurePadding.PaddingTop = UDim.new(0, 20)
 
-local featureLayout = Instance.new("UIListLayout")
-featureLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local featureLayout = Instance.new("UIListLayout", featureList)
 featureLayout.Padding = UDim.new(0, 10)
-featureLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+featureLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center -- Căn giữa khung
 featureLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-featureLayout.Parent = featureList
 
--- Hàm lấy nhân vật
-local function getChar()
-	return lp.Character or lp.CharacterAdded:Wait()
+-- HÀM CẬP NHẬT TAB
+local function refreshView()
+	for _, btn in ipairs(featureList:GetChildren()) do
+		if btn:IsA("TextButton") then
+			local data = FeatureLogic[btn.Name]
+			btn.Visible = (data and data.tab == currentTab)
+		end
+	end
 end
 
--- Tạo nút tính năng
-local function makeBtn(name, order, callback)
-	local btn = Instance.new("TextButton")
+-- TẠO NÚT TAB (Mở rộng chiều dọc)
+local function createTab(name)
+	local container = Instance.new("Frame", tabList)
+	container.Size = UDim2.new(1, 0, 0, 60) -- Tăng từ 41 lên 60
+	container.BackgroundTransparency = 1
+	
+	local btn = Instance.new("TextButton", container)
+	btn.Size = UDim2.new(1, 0, 1, 0)
+	btn.Text = name
+	btn.Font = Enum.Font.SourceSans 
+	
+	btn.TextSize = 20 
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.BackgroundTransparency = 1
+	
+	local divider = Instance.new("Frame", container)
+	divider.Size = UDim2.new(1, 0, 0, 1)
+	divider.Position = UDim2.new(0, 0, 1, 0)
+	divider.BackgroundColor3 = Color3.new(1, 1, 1)
+	divider.BackgroundTransparency = 0.7
+	divider.BorderSizePixel = 0
+
+
+	btn.MouseButton1Click:Connect(function()
+		currentTab = name
+		refreshView()
+	end)
+end
+
+-- TẠO NÚT TÍNH NĂNG (Căn giữa chuẩn)
+local function createFeatureBtn(name, order)
+	local btn = Instance.new("TextButton", featureList)
 	btn.Name = name
-	btn.Size = UDim2.new(1, -20, 0, 35)
+	btn.Size = UDim2.new(0, 140, 0, 35)
 	btn.LayoutOrder = order
 	btn.Font = Enum.Font.Gotham
 	btn.TextSize = 14
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.BackgroundTransparency = 1
-	btn.BorderSizePixel = 0
-	btn.TextXAlignment = Enum.TextXAlignment.Left
-	btn.Text = "   " .. name .. ": ❌"
-	btn.Parent = featureList
+	btn.Text = name .. ": ❌" -- Bỏ khoảng trống lùi đầu dòng
+	btn.TextXAlignment = Enum.TextXAlignment.Center -- Căn giữa chữ trong nút
 
 	btn.MouseButton1Click:Connect(function()
-		features[name] = not features[name]
-		btn.Text = "   " .. name .. ": " .. (features[name] and "✅" or "❌")
-		callback(features[name])
+		_G.Features[name] = not _G.Features[name]
+		local isOn = _G.Features[name]
+		btn.Text = name .. (isOn and ": ✅" or ": ❌")
+		if FeatureLogic[name] then FeatureLogic[name].logic(isOn) end
 	end)
 end
 
--- Ragdoll
-makeBtn("Ragdoll", 1, function(on)
-	local c = getChar()
-	local hum = c:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-	if on then
-		hum:ChangeState(Enum.HumanoidStateType.Physics)
-		hum.PlatformStand = true
-		for _, part in ipairs(c:GetChildren()) do
-			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-				part.Anchored = false
-				part.CanCollide = true
-			end
-		end
-	else
-		hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-		hum.PlatformStand = false
-		hum:Move(Vector3.zero, false)
-	end
-end)
+-- KHỞI TẠO
+createTab("Player")
+createTab("World")
 
--- Fling
-local flingActive = false
-makeBtn("Fling", 2, function(on)
-	flingActive = on
-	if flingActive then
-		coroutine.wrap(function()
-			local movel = 0.1
-			while flingActive do
-				RunService.Heartbeat:Wait()
-				local hrp = getChar():FindFirstChild("HumanoidRootPart")
-				if hrp then
-					local vel = hrp.Velocity
-					hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-					RunService.RenderStepped:Wait()
-					hrp.Velocity = vel
-					RunService.Stepped:Wait()
-					hrp.Velocity = vel + Vector3.new(0, movel, 0)
-					movel = -movel
-				end
-			end
-		end)()
-	end
-end)
-
--- Speed x1.5
-makeBtn("Speed x1.5", 3, function(on)
-	local hum = getChar():FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.WalkSpeed = on and defaultSpeed * 1.5 or defaultSpeed
-	end
-end)
-
--- Noclip
-local noclipConn
-makeBtn("Noclip", 4, function(on)
-	local char = getChar()
-
-	if on then
-		noclipConn = RunService.Stepped:Connect(function()
-			for _, v in pairs(char:GetDescendants()) do
-				if v:IsA("BasePart") then
-					v.CanCollide = false
-				end
-			end
-		end)
-	else
-		if noclipConn then
-			noclipConn:Disconnect()
-			noclipConn = nil
-		end
-		for _, v in pairs(char:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = true
-			end
-		end
-	end
-end)
-
--- Push
-makeBtn("Push", 5, function(on)
-	local char = getChar()
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hum or not hrp then return end
-
-	if on then
-		-- Kích hoạt Ragdoll
-		hum:ChangeState(Enum.HumanoidStateType.Physics)
-		hum.PlatformStand = true
-		for _, part in ipairs(char:GetChildren()) do
-			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-				part.Anchored = false
-				part.CanCollide = true
-			end
-		end
-
-		-- Đẩy từ phía trước (tức là hướng ngược lại với hướng nhìn)
-		local dir = -hrp.CFrame.LookVector
-		local force = Instance.new("BodyVelocity")
-		force.Name = "RagdollPushForce"
-		force.Velocity = dir * 10 + Vector3.new(0, -10, 0)
-		force.MaxForce = Vector3.new(1, 1, 1) * 30000
-		force.P = 1000
-		force.Parent = hrp
-
-		task.delay(0.4, function()
-			if force then force:Destroy() end
-		end)
-	else
-		-- Tắt Ragdoll
-		hum:ChangeState(Enum.HumanoidStateType.GettingUp)
-		hum.PlatformStand = false
-		hum:Move(Vector3.zero, false)
-	end
-end)
-
-
--- Cập nhật tab hiển thị
-local function updateTab()
-	for _, btn in ipairs(featureList:GetChildren()) do
-		if btn:IsA("TextButton") then
-			btn.Visible = currentTab == "Player"
-		end
-	end
+local orderCount = 1
+for name, _ in pairs(FeatureLogic) do
+	createFeatureBtn(name, orderCount)
+	orderCount = orderCount + 1
 end
 
-playerTab.MouseButton1Click:Connect(function()
-	currentTab = "Player"
-	updateTab()
-end)
+-- EVENTS
+toggleBtn.MouseButton1Click:Connect(function() menu.Visible = not menu.Visible end)
 
-worldTab.MouseButton1Click:Connect(function()
-	currentTab = "World"
-	updateTab()
-end)
-
--- Toggle hiển thị menu
-local menuOpen = false
-toggleBtn.MouseButton1Click:Connect(function()
-	menuOpen = not menuOpen
-	menu.Visible = menuOpen
-end)
-
--- Reset tính năng khi chết
 lp.CharacterAdded:Connect(function(char)
 	char:WaitForChild("Humanoid").Died:Connect(function()
-		for k in pairs(features) do
-			features[k] = false
-		end
-		for _, btn in ipairs(featureList:GetChildren()) do
-			if btn:IsA("TextButton") then
-				btn.Text = "   " .. btn.Name .. ": ❌"
-			end
+		for name, _ in pairs(_G.Features) do
+			_G.Features[name] = false
+			local btn = featureList:FindFirstChild(name)
+			if btn then btn.Text = name .. ": ❌" end
 		end
 	end)
 end)
 
--- Free Camera (chỉ hiện trong World tab)
-makeBtn("Free Camera", 100, function(on)
-	local p = Players.LocalPlayer
-	if on then
-		p.CameraMode = Enum.CameraMode.Classic
-		p.CameraMaxZoomDistance = 50
-		p.CameraMinZoomDistance = 2
-		p.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
-	else
-		p.CameraMode = Enum.CameraMode.LockFirstPerson
-		p.CameraMaxZoomDistance = 0.5
-		p.CameraMinZoomDistance = 0.5
-		p.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
-	end
-end)
-
--- Khởi tạo
-local function updateTab()
-	for _, btn in ipairs(featureList:GetChildren()) do
-		if btn:IsA("TextButton") then
-			if currentTab == "Player" and features[btn.Name] ~= nil then
-				btn.Visible = true
-			elseif currentTab == "World" and btn.Name == "Free Camera" then
-				btn.Visible = true
-			else
-				btn.Visible = false
-			end
-		end
-	end
-end
+refreshView()
