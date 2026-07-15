@@ -1,1 +1,63 @@
-game.Players.LocalPlayer:Kick("You have been detected using scripts by ChuongCali and your account has been banned for 10 seconds.") -- Then ban player for 10 seconds.
+-- OptimizeClient.lua (LocalScript - đặt trong StarterPlayer > StarterPlayerScripts)
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+
+----------------------------------------------------------------
+-- 1. GIẢM CHẤT LƯỢNG ĐỒ HỌA
+----------------------------------------------------------------
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+-- Tắt bớt hiệu ứng ánh sáng nặng
+for _, effect in ipairs(Lighting:GetChildren()) do
+    if effect:IsA("BlurEffect") or effect:IsA("SunRaysEffect")
+        or effect:IsA("DepthOfFieldEffect") or effect:IsA("BloomEffect")
+        or effect:IsA("ColorCorrectionEffect") then
+        effect.Enabled = false
+    end
+end
+
+-- Giảm khoảng cách hiển thị (giúp render ít vật thể hơn)
+Workspace.StreamingEnabled = true
+
+----------------------------------------------------------------
+-- 2. GIẢM CHI TIẾT CÁC VẬT THỂ / HIỆU ỨNG PHỤ
+----------------------------------------------------------------
+local function optimizeInstance(inst)
+    if inst:IsA("ParticleEmitter") or inst:IsA("Trail") or inst:IsA("Smoke") or inst:IsA("Fire") then
+        inst.Enabled = false
+    elseif inst:IsA("Decal") or inst:IsA("Texture") then
+        inst.Transparency = 1
+    elseif inst:IsA("MeshPart") or inst:IsA("Part") then
+        inst.Material = Enum.Material.SmoothPlastic
+        inst.CastShadow = false
+    end
+end
+
+for _, inst in ipairs(Workspace:GetDescendants()) do
+    optimizeInstance(inst)
+end
+
+Workspace.DescendantAdded:Connect(optimizeInstance)
+
+----------------------------------------------------------------
+-- 3. DỌN RÁC BỘ NHỚ (GARBAGE COLLECTION) ĐỊNH KỲ
+----------------------------------------------------------------
+task.spawn(function()
+    while true do
+        task.wait(30) -- mỗi 30 giây dọn 1 lần, chỉnh tuỳ ý
+        collectgarbage("collect")
+    end
+end)
+
+----------------------------------------------------------------
+-- 4. GIỚI HẠN FPS ĐỂ ĐỠ NÓNG MÁY / GIẬT (tuỳ chọn)
+----------------------------------------------------------------
+-- Bỏ comment dòng dưới nếu muốn giới hạn FPS thủ công
+-- setfpscap(60)
+
+print("[OptimizeClient] Đã tối ưu xong, FPS mượt hơn!")
